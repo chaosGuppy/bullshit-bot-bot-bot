@@ -8,6 +8,7 @@ from telegram.ext import (
     MessageHandler,
     filters,
 )
+from middleware import telegram_updates_to_generic_thread
 
 logging.basicConfig(
     format="%(asctime)s - %(name)s - %(levelname)s - %(message)s", level=logging.INFO
@@ -16,7 +17,8 @@ logging.basicConfig(
 
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await context.bot.send_message(
-        chat_id=update.effective_chat.id, text=str(context.chat_data)
+        chat_id=update.effective_chat.id,
+        text=str(telegram_updates_to_generic_thread(context.chat_data["updates"])),
     )
 
 
