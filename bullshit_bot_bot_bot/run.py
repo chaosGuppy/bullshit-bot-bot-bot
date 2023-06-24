@@ -1,5 +1,6 @@
 import os
 import logging
+from bullshit_bot_bot_bot.handlers.summarize import summarize
 from telegram import Update
 from telegram.ext import (
     ApplicationBuilder,
@@ -32,7 +33,9 @@ if __name__ == "__main__":
     application = ApplicationBuilder().token(os.environ["TELEGRAM_TOKEN"]).build()
 
     start_handler = CommandHandler("start", start)
+    summarize_handler = CommandHandler("summarize", summarize)
 
+    application.add_handler(summarize_handler)
     application.add_handler(start_handler)
     application.add_handler(MessageHandler(filters.ALL, record_messages))
 
