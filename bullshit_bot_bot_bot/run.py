@@ -10,6 +10,9 @@ from telegram.ext import (
     filters,
 )
 from middleware import telegram_updates_to_generic_thread
+from bullshit_bot_bot_bot.handlers.missing_considerations import (
+    get_missing_considerations,
+)
 
 logging.basicConfig(
     format="%(asctime)s - %(name)s - %(levelname)s - %(message)s", level=logging.INFO
@@ -19,7 +22,19 @@ logging.basicConfig(
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await context.bot.send_message(
         chat_id=update.effective_chat.id,
-        text=str(telegram_updates_to_generic_thread(context.chat_data.get("updates"))),
+        text=str(
+            telegram_updates_to_generic_thread(context.chat_data.get("updates", []))
+        ),
+    )
+
+
+async def missing_considerations(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    response_text = get_missing_considerations(
+        telegram_updates_to_generic_thread(context.chat_data.get("updates"))
+    )
+    await context.bot.send_message(
+        chat_id=update.effective_chat.id,
+        text=response_text,
     )
 
 
@@ -34,6 +49,7 @@ if __name__ == "__main__":
 
     start_handler = CommandHandler("start", start)
     summarize_handler = CommandHandler("summarize", summarize)
+    summarize_handler = CommandHandler("missing_considerations", missing_considerations)
 
     application.add_handler(summarize_handler)
     application.add_handler(start_handler)

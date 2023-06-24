@@ -10,6 +10,7 @@ python = "^3.11"
 python-telegram-bot = "^20.3"
 openai = "^0.27.8"
 langchain = "^0.0.212"
+beautifulsoup4 = "^4.12.2"
 
 [tool.poetry.group.dev.dependencies]
 black = "^23.3.0"

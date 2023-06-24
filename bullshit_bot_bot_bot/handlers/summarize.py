@@ -11,9 +11,9 @@ Here is the summary of the conversation:\n\n{summary}
 
 
 async def summarize(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    messages = telegram_updates_to_generic_thread(context.chat_data["updates"])
+    messages = telegram_updates_to_generic_thread(context.chat_data.get("updates", []))
     printed_messages = print_messages(messages)
-    
+
     chat_completion = openai.ChatCompletion.create(
         model="gpt-3.5-turbo",
         messages=[
@@ -21,11 +21,12 @@ async def summarize(update: Update, context: ContextTypes.DEFAULT_TYPE):
                 "role": "system",
                 "content": "You are an assistant that takes in a transcript of a conversation and generates a summary of it",
             },
-            {"role": "user", "content": SUMMARY_TEMPLATE.format(summary=printed_messages)},
+            {
+                "role": "user",
+                "content": SUMMARY_TEMPLATE.format(summary=printed_messages),
+            },
         ],
     )
     content = chat_completion.choices[0].message.content
 
-    await context.bot.send_message(
-        chat_id=update.effective_chat.id, text=content
-    )
+    await context.bot.send_message(chat_id=update.effective_chat.id, text=content)
