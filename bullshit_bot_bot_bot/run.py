@@ -13,6 +13,7 @@ from middleware import telegram_updates_to_generic_thread
 from bullshit_bot_bot_bot.handlers.missing_considerations import (
     get_missing_considerations,
 )
+from bullshit_bot_bot_bot.handlers.sources import get_sources
 
 logging.basicConfig(
     format="%(asctime)s - %(name)s - %(levelname)s - %(message)s", level=logging.INFO
@@ -57,10 +58,12 @@ if __name__ == "__main__":
     missing_considerations_handler = CommandHandler(
         "missing_considerations", missing_considerations
     )
+    sources_handler = CommandHandler("sources", get_sources)
 
     application.add_handler(summarize_handler)
     application.add_handler(start_handler)
     application.add_handler(missing_considerations_handler)
+    application.add_handler(sources_handler)
     application.add_handler(MessageHandler(filters.ALL, record_messages))
     application.add_error_handler(error_handler)
 
