@@ -1,4 +1,12 @@
-def telegram_updates_to_generic_thread(telegram_updates: dict):
+from typing import TypedDict
+
+
+class GenericMessage(TypedDict):
+    text: str
+    username: str
+
+
+def telegram_updates_to_generic_thread(telegram_updates: dict) -> list[GenericMessage]:
     result = []
     for update in telegram_updates:
         result.append(
