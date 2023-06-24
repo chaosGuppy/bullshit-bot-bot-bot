@@ -19,7 +19,7 @@ logging.basicConfig(
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await context.bot.send_message(
         chat_id=update.effective_chat.id,
-        text=str(telegram_updates_to_generic_thread(context.chat_data["updates"])),
+        text=str(telegram_updates_to_generic_thread(context.chat_data.get("updates"))),
     )
 
 

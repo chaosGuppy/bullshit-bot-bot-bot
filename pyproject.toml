@@ -3,12 +3,13 @@ name = "bullshit-bot-bot-bot"
 version = "0.1.0"
 description = ""
 authors = ["chaosGuppy <lawphi56@gmail.com>"]
-packages = [{include = "bullshit_bot_bot_bot"}]
+packages = [{ include = "bullshit_bot_bot_bot" }]
 
 [tool.poetry.dependencies]
 python = "^3.11"
 python-telegram-bot = "^20.3"
 openai = "^0.27.8"
+langchain = "^0.0.212"
 
 [tool.poetry.group.dev.dependencies]
 black = "^23.3.0"
