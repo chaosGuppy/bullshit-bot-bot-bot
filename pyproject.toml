@@ -1,0 +1,18 @@
+[tool.poetry]
+name = "bullshit-bot-bot-bot"
+version = "0.1.0"
+description = ""
+authors = ["chaosGuppy <lawphi56@gmail.com>"]
+packages = [{include = "bullshit_bot_bot_bot"}]
+
+[tool.poetry.dependencies]
+python = "^3.11"
+python-telegram-bot = "^20.3"
+
+[tool.poetry.group.dev.dependencies]
+black = "^23.3.0"
+ruff = "^0.0.275"
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
