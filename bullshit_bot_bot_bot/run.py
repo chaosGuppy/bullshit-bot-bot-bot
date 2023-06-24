@@ -1,5 +1,6 @@
 import os
 import logging
+from bullshit_bot_bot_bot.handlers.factcheck import factcheck
 from bullshit_bot_bot_bot.handlers.summarize import summarize
 from telegram import Update
 from telegram.ext import (
@@ -59,11 +60,13 @@ if __name__ == "__main__":
         "missing_considerations", missing_considerations
     )
     sources_handler = CommandHandler("sources", get_sources)
+    factcheck_handler = CommandHandler("factcheck", factcheck)
 
-    application.add_handler(summarize_handler)
     application.add_handler(start_handler)
+    application.add_handler(summarize_handler)
     application.add_handler(missing_considerations_handler)
     application.add_handler(sources_handler)
+    application.add_handler(factcheck_handler)
     application.add_handler(MessageHandler(filters.ALL, record_messages))
     application.add_error_handler(error_handler)
 

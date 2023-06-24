@@ -17,6 +17,11 @@ Copy the `.env.example` file to `.env`
 
 - Copy your API key to the `.env` file as `OPENAI_API_KEY`
 
+##### Google
+
+- Got to https://console.cloud.google.com/ and create a project
+- Generate an API key to use as the `GOOGLE_API_KEY`
+
 ##### Root
 
 ```sh
