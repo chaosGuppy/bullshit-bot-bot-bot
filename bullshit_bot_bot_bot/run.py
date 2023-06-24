@@ -13,7 +13,7 @@ from middleware import telegram_updates_to_generic_thread
 from bullshit_bot_bot_bot.handlers.missing_considerations import (
     get_missing_considerations,
 )
-from bullshit_bot_bot_bot.handlers.sources import get_sources
+from bullshit_bot_bot_bot.handlers.sources import extract_claims, get_sources
 
 logging.basicConfig(
     format="%(asctime)s - %(name)s - %(levelname)s - %(message)s", level=logging.INFO
@@ -50,6 +50,13 @@ async def record_messages(update: Update, context: ContextTypes.DEFAULT_TYPE):
     context.chat_data["updates"].append(update.to_dict())
 
 
+async def claims(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    messages = telegram_updates_to_generic_thread(context.chat_data.get("updates"))
+    await context.bot.send_message(
+        chat_id=update.effective_chat.id, text=extract_claims(messages)
+    )
+
+
 if __name__ == "__main__":
     application = ApplicationBuilder().token(os.environ["TELEGRAM_TOKEN"]).build()
 
@@ -59,11 +66,13 @@ if __name__ == "__main__":
         "missing_considerations", missing_considerations
     )
     sources_handler = CommandHandler("sources", get_sources)
+    claims_handler = CommandHandler("claims", claims)
 
     application.add_handler(summarize_handler)
     application.add_handler(start_handler)
     application.add_handler(missing_considerations_handler)
     application.add_handler(sources_handler)
+    application.add_handler(claims_handler)
     application.add_handler(MessageHandler(filters.ALL, record_messages))
     application.add_error_handler(error_handler)
 
