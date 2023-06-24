@@ -121,7 +121,6 @@ async def factcheck(update: Update, context: ContextTypes.DEFAULT_TYPE):
         f"""
 Title: {claim_review['title']}
 Url: {claim_review['url']}
-({claim_review['textualRating']})\n{claim_review['url']}
         """.strip() for claim_review in claim_reviews
     ]
 
