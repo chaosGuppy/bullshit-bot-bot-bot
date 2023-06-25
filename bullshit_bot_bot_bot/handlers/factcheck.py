@@ -5,11 +5,14 @@ from telegram.ext import ApplicationBuilder, ContextTypes, CommandHandler
 import requests
 from typing import Any, Dict, Optional, TypedDict
 
-from bullshit_bot_bot_bot.middleware import telegram_updates_to_generic_thread
+from bullshit_bot_bot_bot.middleware import (
+    GenericMessage,
+    with_messages_processed,
+)
 from bullshit_bot_bot_bot.utils import print_messages, truncate_middle
 
 # Ask GPT: Summarise this article into three claims of up to 6 words each.
-# Save phrases into temporary variables. 
+# Save phrases into temporary variables.
 # Send searches to Google Fact Check API
 # Return top three outputs from Google Fact Check API / link to search results (depending on what’s easier)
 
@@ -37,9 +40,11 @@ Here is the article to extract searches from:
 
 GOOGLE_API_KEY = os.environ["GOOGLE_API_KEY"]
 
+
 class Publisher(TypedDict):
     name: str
     site: str
+
 
 class ClaimReview(TypedDict):
     publisher: Publisher
@@ -49,14 +54,17 @@ class ClaimReview(TypedDict):
     textualRating: str
     languageCode: str
 
+
 class Claim(TypedDict):
     text: str
     claimant: str
     claimDate: str
     claimReview: list[ClaimReview]
 
+
 class Response(TypedDict):
     claims: list[Claim] | None
+
 
 def google_fact_check_api(query: str) -> Response:
     url = "https://factchecktools.googleapis.com/v1alpha1/claims:search"
@@ -75,19 +83,25 @@ def google_fact_check_api(query: str) -> Response:
         raise Exception(f"Error: {response.status_code} {response.text}")
 
 
-async def factcheck(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    messages = telegram_updates_to_generic_thread(context.chat_data.get("updates", []))
+@with_messages_processed
+async def factcheck(
+    messages: list[GenericMessage], update: Update, context: ContextTypes.DEFAULT_TYPE
+):
     printed_transcript = print_messages(messages)
 
     print(len(messages))
-    
+
     chat_completion = openai.ChatCompletion.create(
         model="gpt-3.5-turbo",
         messages=[
-            { "role": "system", "content": CLAIMS_SYSTEM },
+            {"role": "system", "content": CLAIMS_SYSTEM},
             {
                 "role": "user",
-                "content": CLAIMS_USER_TEMPLATE.format(transcript=truncate_middle(printed_transcript, 12000 - len(CLAIMS_USER_TEMPLATE)))
+                "content": CLAIMS_USER_TEMPLATE.format(
+                    transcript=truncate_middle(
+                        printed_transcript, 12000 - len(CLAIMS_USER_TEMPLATE)
+                    )
+                ),
             },
         ],
     )
@@ -107,26 +121,34 @@ async def factcheck(update: Update, context: ContextTypes.DEFAULT_TYPE):
     #     chat_id=update.effective_chat.id, text=f"Found the following claims:\n{claims_str}"
     # )
 
-    claims = [claim for response in check_results for claim in response.get("claims", [])]
+    claims = [
+        claim for response in check_results for claim in response.get("claims", [])
+    ]
 
     if len(claims) == 0:
         await context.bot.send_message(
-        chat_id=update.effective_chat.id, text="No fact check results found"
-    )
+            chat_id=update.effective_chat.id, text="No fact check results found"
+        )
 
-    claim_reviews = [claim_review for claim in claims for claim_review in claim.get("claimReview", [])]
+    claim_reviews = [
+        claim_review
+        for claim in claims
+        for claim_review in claim.get("claimReview", [])
+    ]
     print(str(claim_reviews))
 
     claim_review_strs = [
         f"""
 Title: {claim_review['title']}
 Url: {claim_review['url']}
-        """.strip() for claim_review in claim_reviews
+        """.strip()
+        for claim_review in claim_reviews
     ]
 
     uniq_claim_review_strs = list(set(claim_review_strs))
     claim_review_str = "\n\n".join(uniq_claim_review_strs)
 
     await context.bot.send_message(
-        chat_id=update.effective_chat.id, text=f"Found the following fact check results:\n{claim_review_str}"
+        chat_id=update.effective_chat.id,
+        text=f"Found the following fact check results:\n{claim_review_str}",
     )

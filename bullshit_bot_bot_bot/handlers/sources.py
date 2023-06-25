@@ -1,12 +1,11 @@
 from ast import literal_eval
 import openai
 from pydantic import Field
-from bullshit_bot_bot_bot.middleware import GenericMessage
+from bullshit_bot_bot_bot.middleware import GenericMessage, with_messages_processed
 from telegram import Update
 from telegram.ext import ContextTypes
 
 from langchain.chat_models import ChatOpenAI
-from bullshit_bot_bot_bot.middleware import GenericMessage
 from bullshit_bot_bot_bot.utils import print_messages
 from middleware import telegram_updates_to_generic_thread
 from langchain.output_parsers import PydanticOutputParser
@@ -30,7 +29,7 @@ Conversation:
 """
 
 
-def extract_claims(messages: list[GenericMessage]):
+def get_evidence(messages: list[GenericMessage]):
     class Parser(BaseModel):
         claims: list[str] = Field(
             ..., description="A list of claims made in the conversation"
@@ -141,3 +140,12 @@ Your task is to summarize the latest news article that is being discussed in the
 Conversation:
 {message_prompt_section}
 """
+
+
+@with_messages_processed
+async def evidence(
+    messages: list[GenericMessage], update: Update, context: ContextTypes.DEFAULT_TYPE
+):
+    await context.bot.send_message(
+        chat_id=update.effective_chat.id, text=get_evidence(messages)
+    )

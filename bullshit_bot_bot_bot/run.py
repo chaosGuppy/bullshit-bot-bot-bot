@@ -4,6 +4,7 @@ import logging
 from bullshit_bot_bot_bot.handlers.conflicts import get_conflicts
 from bullshit_bot_bot_bot.handlers.factcheck import factcheck
 from bullshit_bot_bot_bot.handlers.summarize import summarize
+from bullshit_bot_bot_bot.handlers.sources import evidence
 from telegram import Update
 from telegram.ext import (
     Application,
@@ -15,9 +16,8 @@ from telegram.ext import (
 )
 from middleware import telegram_updates_to_generic_thread
 from bullshit_bot_bot_bot.handlers.missing_considerations import (
-    get_missing_considerations,
+    missing_considerations,
 )
-from bullshit_bot_bot_bot.handlers.sources import extract_claims, get_sources
 
 logging.basicConfig(
     format="%(asctime)s - %(name)s - %(levelname)s - %(message)s", level=logging.INFO
@@ -34,16 +34,6 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     )
 
 
-async def missing_considerations(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    response_text = get_missing_considerations(
-        telegram_updates_to_generic_thread(context.chat_data.get("updates", []))
-    )
-    await context.bot.send_message(
-        chat_id=update.effective_chat.id,
-        text=response_text,
-    )
-
-
 async def error_handler(update: object, context: ContextTypes.DEFAULT_TYPE) -> None:
     logger.error("Exception while handling an update:", exc_info=context.error)
 
@@ -52,13 +42,6 @@ async def record_messages(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if "updates" not in context.chat_data:
         context.chat_data["updates"] = []
     context.chat_data["updates"].append(update.to_dict())
-
-
-async def claims(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    messages = telegram_updates_to_generic_thread(context.chat_data.get("updates", []))
-    await context.bot.send_message(
-        chat_id=update.effective_chat.id, text=extract_claims(messages)
-    )
 
 
 class CommandRegistry:
@@ -81,8 +64,8 @@ class OnboardingCommand:
     def __init__(self, registry: CommandRegistry):
         self._registry = registry
 
-    def __call__(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
-        context.bot.send_message(
+    async def __call__(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
+        await context.bot.send_message(
             chat_id=update.effective_chat.id,
             text=self._registry.get_onboarding_message(),
         )
@@ -93,9 +76,23 @@ if __name__ == "__main__":
     registry = CommandRegistry(application)
 
     registry.register(
-        "s",
-        summarize,
-        "Summarize the last message. Use '/s all' to summarize the whole conversation.",
+        "f",
+        factcheck,
+        "Factcheck claims from the last message using the Google fact check API. "
+        "Use '/f all' to process the whole conversation.",
+    )
+    registry.register(
+        "e",
+        evidence,
+        "Find evidence that supports or refutes the claims in the last message. "
+        "Use '/e all' to process the whole conversation.",
+    )
+    registry.register(
+        "c",
+        get_conflicts,
+        "Get a list of actors who may have an interest in having people believe "
+        "the claims in the last message. Use '/c all' to process the whole "
+        "conversation.",
     )
     registry.register(
         "m",
@@ -104,23 +101,9 @@ if __name__ == "__main__":
         "Use '/m all' to process the whole conversation.",
     )
     registry.register(
-        "e",
-        claims,
-        "Find evidence that supports or refutes the claims in the last message. "
-        "Use '/e all' to process the whole conversation.",
-    )
-    registry.register(
-        "f",
-        factcheck,
-        "Factcheck claims from the last message using the google fact check API. "
-        "Use '/f all' to process the whole conversation.",
-    )
-    registry.register(
-        "c",
-        get_conflicts,
-        "Get a list of actors who may have an interest in having people believe "
-        "the claims in the last message. Use '/c all' to process the whole "
-        "conversation.",
+        "s",
+        summarize,
+        "Summarize the last message. Use '/s all' to summarize the whole conversation.",
     )
     onboarding = OnboardingCommand(registry)
 
