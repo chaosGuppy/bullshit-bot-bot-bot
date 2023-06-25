@@ -1,10 +1,12 @@
 import os
+from typing import Callable
 import logging
 from bullshit_bot_bot_bot.handlers.conflicts import get_conflicts
 from bullshit_bot_bot_bot.handlers.factcheck import factcheck
 from bullshit_bot_bot_bot.handlers.summarize import summarize
 from telegram import Update
 from telegram.ext import (
+    Application,
     ApplicationBuilder,
     ContextTypes,
     CommandHandler,
@@ -59,26 +61,72 @@ async def claims(update: Update, context: ContextTypes.DEFAULT_TYPE):
     )
 
 
+class CommandRegistry:
+    def __init__(self, application: Application):
+        self._application = application
+        self._command_descriptions = {}
+
+    def register(self, command_name: str, callback: Callable, description: str):
+        self._application.add_handler(CommandHandler(command_name, callback))
+        self._command_descriptions[command_name] = description
+
+    def get_onboarding_message(self):
+        return "Here's what I can do:\n" + "\n".join(
+            f"/{command_name}: {description}"
+            for command_name, description in self._command_descriptions.items()
+        )
+
+
+class OnboardingCommand:
+    def __init__(self, registry: CommandRegistry):
+        self._registry = registry
+
+    def __call__(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
+        context.bot.send_message(
+            chat_id=update.effective_chat.id,
+            text=self._registry.get_onboarding_message(),
+        )
+
+
 if __name__ == "__main__":
     application = ApplicationBuilder().token(os.environ["TELEGRAM_TOKEN"]).build()
+    registry = CommandRegistry(application)
 
-    start_handler = CommandHandler("start", start)
-    summarize_handler = CommandHandler("summarize", summarize)
-    missing_considerations_handler = CommandHandler(
-        "missing_considerations", missing_considerations
+    registry.register(
+        "s",
+        summarize,
+        "Summarize the last message. Use '/s all' to summarize the whole conversation.",
     )
-    sources_handler = CommandHandler("sources", get_sources)
-    claims_handler = CommandHandler("claims", claims)
-    factcheck_handler = CommandHandler("factcheck", factcheck)
-    conflicts_handler = CommandHandler("conflicts", get_conflicts)
+    registry.register(
+        "m",
+        missing_considerations,
+        "Get key considerations that have been overlooked in the last message. "
+        "Use '/m all' to process the whole conversation.",
+    )
+    registry.register(
+        "e",
+        claims,
+        "Find evidence that supports or refutes the claims in the last message. "
+        "Use '/e all' to process the whole conversation.",
+    )
+    registry.register(
+        "f",
+        factcheck,
+        "Factcheck claims from the last message using the google fact check API. "
+        "Use '/f all' to process the whole conversation.",
+    )
+    registry.register(
+        "c",
+        get_conflicts,
+        "Get a list of actors who may have an interest in having people believe "
+        "the claims in the last message. Use '/c all' to process the whole "
+        "conversation.",
+    )
+    onboarding = OnboardingCommand(registry)
 
+    start_handler = CommandHandler("start", onboarding)
     application.add_handler(start_handler)
-    application.add_handler(summarize_handler)
-    application.add_handler(missing_considerations_handler)
-    application.add_handler(sources_handler)
-    application.add_handler(claims_handler)
-    application.add_handler(factcheck_handler)
-    application.add_handler(conflicts_handler)
+
     application.add_handler(MessageHandler(filters.ALL, record_messages))
     application.add_error_handler(error_handler)
 
