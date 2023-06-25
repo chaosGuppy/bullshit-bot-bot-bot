@@ -70,7 +70,7 @@ def fact_check_claims(claims: list[str]):
     )
     claim_section = "\n".join([f"Claim: {claim}" for claim in claims])
     return agent.run(
-        f"Please find evidence that supports or refutes the following claims:\n{claim_section}."
+        f"Please find evidence that supports or refutes the following claims:\n{claim_section}. Hint: to find evidence that refutes a claim, try googling for its negation. "
         "Investigate a few of the most relevant-looking sources. When you are done, please write a succinct summary of your findings, "
         "citing your sources inline, using markdown."
     )
